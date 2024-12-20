@@ -1,0 +1,212 @@
+html, body {
+    height: 100%;         /* Ensure the body takes the full height of the viewport */
+    width: 100%;
+    margin: 0;            /* Remove default margin */
+    padding: 0;
+    overflow: auto;       /* Allow scrolling when content exceeds the minimum size */
+    background-color: #eceadc;
+  }
+
+.login {
+    text-align: center;
+    margin-top: 30vh;
+}
+.login * {
+    margin: 5px;
+    font-size: 20px;
+}
+.login p {
+    font-size:60px;
+    margin-bottom: 40px;
+}
+
+.tabHeader {
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    padding: 5px;
+  }
+
+.tabHeader button {
+background-color: inherit;
+float: left;
+border: none;
+outline: none;
+cursor: pointer;
+padding: 14px 16px;
+transition: 0.3s;
+border-radius: 5px;
+margin:2px;
+}
+
+.tabHeader button.completed_tab.active {
+    background-color:rgb(70, 163, 30)
+}
+
+.tabHeader button.noncompleted_tab.active {
+    background-color: #d32525;    
+}
+
+.tabHeader button.completed_tab {
+    background-color:#61cc5b;
+    
+}
+.tabHeader button.noncompleted_tab {
+    background-color:rgb(226, 126, 126); 
+}
+.stepsContent {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 20px;
+    margin: 0;
+}
+
+.stepContainer {
+    background-color: rgb(221, 234, 229);
+    width: 300px; /* Fixed width for each item */
+    box-sizing: border-box; /* Ensure padding and border are included in the width */
+    border-radius: 20px;
+    text-align: center;
+    margin: 0 20px 20px 0; /* Maintain spacing between items */
+}
+
+p {
+    margin: 5px;
+}
+.stepContainer.active {
+    border-color:black;
+    border-width: 5px;
+    border-style: solid;
+}
+
+textarea {
+    width: 100%;
+    height: 500px; 
+    resize: none;
+    font-size: 16px;
+}
+
+
+.successContainer .containerHeader {
+    background-color: rgb(68, 212, 87);
+}
+
+.failedContainer .containerHeader {
+    background-color: rgb(196, 71, 66);
+}
+.stepContainer.successContainer {
+    background-color: rgb(190, 241, 197);
+}
+
+.stepContainer.failedContainer {
+    background-color: rgb(226, 173, 166)
+}
+
+
+
+
+.itsOkay .noooo {
+    left: 100%;
+    background: #0000;
+    z-index: 3;
+    transform: translateX(-100%);
+  }
+  .itsOkay .yesss {
+    right: 100%;
+    background: #2c3e50;
+    z-index: 5;
+    transform: translateX(100%);
+  }
+  .buttonHere,
+  .reallyYesOrNo {
+    display: flex;
+    width: 150px;
+    float:right;
+  }
+  .buttonHere {
+    position: relative;
+    color: #eee;
+    background: black;
+    transition: 559ms all;
+    user-select: none;
+  }
+  .yeahhh,
+  .noooo,
+  .yesss,
+  .buttonHere {
+    border-radius: calc(0.95vw + 30px);
+  }
+  .yeahhh,
+  .noooo,
+  .yesss {
+    padding: 15px;
+  }
+  .yeahhh {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .noooo,
+  .yesss {
+    position: absolute;
+    transform: translateX(0);
+  }
+  .noooo {
+    background: #c0392b;
+    left: 0;
+    z-index: 5;
+    transition: 559ms left, 559ms transform;
+  }
+  .yesss {
+    right: 0;
+    background: #0000;
+    z-index: 3;
+    transition: 559ms right, 559ms transform;
+  }
+
+  .containerHeader {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    font-family: "sans-serif";
+    flex: 1;
+    font-size: 35px;
+    padding: 10px;
+}
+
+.right .containerHeader {
+    padding: 0px;
+}
+
+  .contentContainer {
+    display: flex;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+  }
+  
+  
+  .column {
+    flex: 1;
+    padding:20px;
+  }
+  
+  .left {
+    background-color: #f7f5e8;
+    width: 50%;
+    min-width: 400px;
+    box-sizing: border-box;
+    border-right: 2px solid gray;
+  }
+  
+  .right {
+    background-color: #f8f5e1;
+    width:50%;
+    min-width:400px;
+    box-sizing: border-box;
+  }
+
+  p, button{
+    font-size: 20px;
+  }
+
+  
