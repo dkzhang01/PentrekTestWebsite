@@ -62,7 +62,7 @@ export class webModel extends EventTarget {
     async checkWorkflows() {
         let response;
         try {
-            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=20', {
+            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=5', {
                 method: 'GET',
                 headers: {
                 'Authorization': `token ${this.#token}`,
@@ -77,9 +77,9 @@ export class webModel extends EventTarget {
             const data = await response.json();
             // Filter workflows with the name "Testing"
             const filteredWorkflows = data.workflow_runs.filter(workflow => 
-                workflow.name === "Run on push"
+               workflow.name === "Testing"
             )
-            //const filteredWorkflows = [];
+            // const filteredWorkflows = [];
             // let foundNonSuccess = false;
             // for (const workflow of data.workflow_runs) {
             //     if (workflow.name === "Testing") {
@@ -119,6 +119,7 @@ class workflow extends EventTarget {
     steps
     head_sha
     #token
+    start_time
 
     constructor(run_id, token) {
         super()
@@ -133,6 +134,7 @@ class workflow extends EventTarget {
         jobInstance.status = data.jobs[0].status
         jobInstance.conclusion = data.jobs[0].conclusion
         jobInstance.head_sha = data.jobs[0].head_sha
+        jobInstance.start_time = new Date(data.jobs[0].started_at)
         jobInstance.steps = data.jobs[0].steps.map(step => ({
             name: step.name,
             status: step.status,

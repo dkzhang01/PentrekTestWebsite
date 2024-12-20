@@ -90,7 +90,7 @@ export class webView {
                 this.#workflow_live_step[wf.run_id] = 0
             }
             const tab_button = document.createElement('button')
-            tab_button.textContent = wf.run_id; 
+            tab_button.textContent = this.convert_date(wf.start_time); 
             if (wf.conclusion == "success") {
                 tab_button.className = "completed_tab"
             } else {
