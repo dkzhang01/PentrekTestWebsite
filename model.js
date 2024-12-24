@@ -62,7 +62,7 @@ export class webModel extends EventTarget {
     async checkWorkflows() {
         let response;
         try {
-            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=5', {
+            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=20', {
                 method: 'GET',
                 headers: {
                 'Authorization': `token ${this.#token}`,
@@ -75,10 +75,11 @@ export class webModel extends EventTarget {
             }
 
             const data = await response.json();
+            console.log(data)
             // Filter workflows with the name "Testing"
             const filteredWorkflows = data.workflow_runs.filter(workflow => 
                workflow.name === "Testing"
-            )
+            ).slice(0,5)
             // const filteredWorkflows = [];
             // let foundNonSuccess = false;
             // for (const workflow of data.workflow_runs) {
@@ -228,21 +229,30 @@ class workflow extends EventTarget {
 
     updateStepsLog(log) {
         const logArray = log.split('\n')
-        let i = 0
-        let stepptr = 0
-        while (i < logArray.length) {
-            const timestampMatch = logArray[i].match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)/);
-            if (timestampMatch) {
-                const timestamp = timestampMatch[1]; // Extract the timestamp part
-                const date = new Date(timestamp); // Convert to Date object
-                while (stepptr < this.steps.length - 1 && new Date(this.steps[stepptr + 1].startTime) < date) {
-                    stepptr += 1
+        let logs_by_step = [""]
+        for (let i = 0; i < logArray.length; i++) {
+            if (logArray[i].replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)/, "").trim() == "[!#-StartStep-#!]") {
+                logs_by_step.push("")
+            } else if (logArray[i].replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)/, "").trim() == "[!#-EndStep-#!]"){
+                while (logArray[i].replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)/, "").trim() != "[!#-StartStep-#!]") {
+                    i += 1
                 }
-                this.steps[stepptr].log = this.steps[stepptr].log + '\n' + logArray[i]
-            } else {
-                this.steps[stepptr].log = this.steps[stepptr].log + logArray[i]
+                i -= 1;
+            } else if (logArray[i].replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)/, "").trim() == "Post job cleanup.") {
+                break;
             }
-            i += 1
+            logs_by_step[logs_by_step.length - 1] += logArray[i] + '\n'
+        }
+
+        let j = 0
+        while (this.steps[j].name != "Install brew") {
+            j += 1;
+        }
+        let k = 0
+        while (k + 1 < logs_by_step.length) {
+            this.steps[j].log = logs_by_step[k + 1];
+            j += 1;
+            k += 1;
         }
     }
 }

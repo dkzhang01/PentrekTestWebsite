@@ -15,7 +15,7 @@ export class webView {
         this.#steps_buttons = []
         this.#in_depth=false;
         this.#workflow_live_step = {}
-        this.#leave_out_steps_set = new Set(["Set up job", "Checkout code", "Install brew", "Install Cairo", "Install Bazel", "Post Checkout code", "Complete job", "sync"])
+        this.#leave_out_steps_set = new Set()//new Set(["Set up job", "Checkout code", "Install brew", "Install Cairo", "Install Bazel", "Post Checkout code", "Complete job", "sync"])
     }
 
     render_login(render_div) {
