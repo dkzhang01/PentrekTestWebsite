@@ -47,6 +47,10 @@ margin:2px;
     background-color: #d32525;    
 }
 
+.tabHeader button.inprogress_tab.active {
+  background-color: #c1d717;    
+}
+
 .tabHeader button.completed_tab {
     background-color:#61cc5b;
     
@@ -54,6 +58,11 @@ margin:2px;
 .tabHeader button.noncompleted_tab {
     background-color:rgb(226, 126, 126); 
 }
+
+.tabHeader button.inprogress_tab {
+  background-color:#c8d374;  
+}
+
 .stepsContent {
     display: flex;
     flex-wrap: wrap;
@@ -91,11 +100,19 @@ textarea {
     background-color: rgb(68, 212, 87);
 }
 
+.inProgressContainer .containerHeader {
+  background-color: rgb(190, 199, 61);
+}
+
 .failedContainer .containerHeader {
     background-color: rgb(196, 71, 66);
 }
 .stepContainer.successContainer {
     background-color: rgb(190, 241, 197);
+}
+
+.stepContainer.inProgressContainer {
+  background-color: rgb(226, 225, 166)
 }
 
 .stepContainer.failedContainer {

@@ -94,7 +94,11 @@ export class webView {
             if (wf.conclusion == "success") {
                 tab_button.className = "completed_tab"
             } else {
-                tab_button.className = "noncompleted_tab"
+                if (wf.status == "in_progress") {
+                    tab_button.classNmae = "inprogress_tab"
+                } else {
+                    tab_button.className = "noncompleted_tab"
+                }
             }
             tab_button.classList.toggle("active", wf.run_id == this.#view_workflow.run_id)
             
@@ -165,8 +169,13 @@ export class webView {
                 stepBoxesSuccess.push([step_container, step]);
             }
             else {
-                step_container.classList.add("failedContainer")
-                stepBoxesFailed.push([step_container, step]);
+                if (step_container.status == "in_progress") {
+                    step_container.classList.add("inProgressContainer")
+                    stepBoxesFailed.push([step_container, step]);
+                } else {
+                    step_container.classList.add("failedContainer")
+                    stepBoxesFailed.push([step_container, step]);
+                }
             }
             step_container.addEventListener('click', ()=>{
                 for (let cont of this.#steps_buttons) {
