@@ -1,21 +1,14 @@
 export class webView {
-    #model
-    #view_workflow
-    first_render
-    #tab_buttons
-    #steps_buttons
-    #in_depth
-    #leave_out_steps_set
-    #workflow_live_step
-    constructor(model) {
-        this.#model = model
-        this.first_render = true;
-        this.#view_workflow
-        this.#tab_buttons = []
-        this.#steps_buttons = []
-        this.#in_depth=false;
-        this.#workflow_live_step = {}
-        this.#leave_out_steps_set = new Set()//new Set(["Set up job", "Checkout code", "Install brew", "Install Cairo", "Install Bazel", "Post Checkout code", "Complete job", "sync"])
+    #controller
+    #columns
+    #stepNames
+    constructor(controller) {
+        this.#controller = controller
+        this.#columns = {
+            "Setup":["Checkout code", "Install brew", "Install Cairo", "Install Bazel", "sync"],
+            "Basic Tests": ["Myapp", "tools:tests", "ray:unittests", "wrapper_smart_ptrs :unittests", "tools:bench", "tools:cskiaapp", "gm:gmapp"]
+        }
+        this.#stepNames = []
     }
 
     render_login(render_div) {
@@ -24,7 +17,7 @@ export class webView {
         const form_title = document.createElement('p');
         form_title.textContent = 'Pentrek Unit Testing'
         form.append(form_title)
-        // Create Username Label and Input
+
         const key = document.createElement('label');
         key.setAttribute('for', 'key');
         key.textContent = 'key: ';
@@ -38,18 +31,16 @@ export class webView {
         
         form.appendChild(document.createElement('br'));
 
-        // Create Submit Button
         const submitButton = document.createElement('button');
         submitButton.setAttribute('type', 'submit');
         submitButton.textContent = 'Submit';
         form.appendChild(submitButton);
         form.addEventListener('submit', (event) => {
-            event.preventDefault(); // Prevent the default form submission
+            event.preventDefault();
             
             const key = keyInput.value;
             this.render(render_div)
-            //to delete
-            this.#model.initialize(key)
+            this.#controller.login(key)
           });
 
         // Append the form to the body
@@ -57,169 +48,163 @@ export class webView {
     }
 
     render(render_div) {
-        render_div.innerHTML = ''
-        const tab_header = document.createElement('div');
-        tab_header.className = "tabHeader";
-        const content_container = document.createElement('div')
-        content_container.classList.add("contentContainer")
-        const column1 = document.createElement('div')
-        column1.classList.add("column", "left")
-        const column2 = document.createElement('div')
-        column2.classList.add("column", "right")
-        const content2 = document.createElement('div')
+        render_div.innerHTML = "";
+        // Render header bar
+        let header_bar = document.createElement("div");
+        header_bar.textContent = "Some Status Message"
+        render_div.append(header_bar);
 
-        content2.classList.add("stepsContent")
-        const content = document.createElement('div')
-        column1.append(content, content2)
-        content_container.append(column1, column2)
-        render_div.append(tab_header, content_container);
-        document.addEventListener("tabUpdate", (event) => {
-            this.#view_workflow = this.#model.workflows[0];
-            this.update_tabs(tab_header, content, content2, column2)
-            if (this.first_render) {
-                this.switch_content(content, content2, this.#model.workflows[0], column2);
-                this.first_render = false;
+        //render main table
+        let table = document.createElement("table");
+        table.classList.add("mainTable")
+        render_div.append(table);
+        let r1 = document.createElement("tr")
+        let d11 = document.createElement("th")
+        // To add commit number input
+        let d12 = document.createElement("th")
+        r1.append(d11, d12)
+        let r2 = document.createElement("tr");
+        let d21 = document.createElement("th")
+        let container = document.createElement("div")
+        container.textContent = "Commit"
+        container.classList.add("titleContainer")
+        d21.append(container)
+        let d22 = document.createElement("th")
+        container = document.createElement("div");
+        container.textContent = "Commit Message"
+        container.classList.add("titleContainer")
+        d22.append(container)
+        r2.append(d21, d22)
+        for (let key in this.#columns) {
+            let title = document.createElement("th")
+            let titleContainer = document.createElement("div")
+            titleContainer.textContent = key
+            titleContainer.classList.add("titleContainer")
+            title.append(titleContainer)
+            title.colSpan = 0
+            r1.append(title)
+            for (let colName of this.#columns[key]) {
+                let colTitle = document.createElement("th");
+                let colTitleContainer = document.createElement("div")
+                colTitleContainer.title = colName;
+                colTitleContainer.classList.add("testName")
+                colTitle.append(colTitleContainer)
+                r2.append(colTitle)
+                this.#stepNames.push(colName);
+                title.colSpan += 1
             }
+        }
+        table.append(r1, r2)
+        document.addEventListener("update", () => {
+            console.log("updating")
+            this.fill_table(table, 5, render_div)
         })
     }
 
-    update_tabs(tab_header, content, content2, column2) {
-        tab_header.innerHTML = "";
-        for (let wf of this.#model.workflows) {
-            if (this.#workflow_live_step[wf.run_id] === undefined) {
-                this.#workflow_live_step[wf.run_id] = 0
-            }
-            const tab_button = document.createElement('button')
-            tab_button.textContent = this.convert_date(wf.start_time); 
-            if (wf.conclusion == "success") {
-                tab_button.className = "completed_tab"
-            } else {
-                if (wf.status == "in_progress") {
-                    tab_button.classNmae = "inprogress_tab"
-                } else {
-                    tab_button.className = "noncompleted_tab"
-                }
-            }
-            tab_button.classList.toggle("active", wf.run_id == this.#view_workflow.run_id)
-            
-            tab_button.classList.add("tab")
-
-            tab_button.addEventListener("click", () => {
-                this.switch_content(content, content2, wf, column2)
-                for (let tb_data of this.#tab_buttons) {
-                    if (tb_data.run_id == this.#view_workflow.run_id) {
-                        tb_data.button.classList.add("active")
+    fill_table(table, count, render_div) {
+        // Need to delete some parts of the table
+        let commit_row = table.querySelector(".CommitEntry")
+        while (commit_row != null) {
+            table.removeChild(commit_row)
+            commit_row = table.querySelector(".CommitEntry")
+        }
+        const workflowsToDisplay = this.#controller.getViewWorkflows(count)
+        for (let wf of workflowsToDisplay) {
+            let row = document.createElement("tr")
+            let commit_id = document.createElement("th")
+            commit_id.textContent = wf.head_sha
+            let commit_message = document.createElement("th")
+            commit_message.textContent = wf.display_title
+            row.append(commit_id, commit_message)
+            const wfStepnames = wf.steps.map((s) => s.name)
+            for (let stepName of this.#stepNames) {
+                if (wfStepnames.indexOf(stepName) > -1) {
+                    const step = wf.steps[wfStepnames.indexOf(stepName)]
+                    let entry = document.createElement("th")
+                    let entryContainer = document.createElement("div")
+                    entryContainer.classList.add("status")
+                    entry.append(entryContainer)
+                    if (step.conclusion == "success") {
+                        entryContainer.classList.add("successEntry")
                     }
                     else {
-                        tb_data.button.classList.remove("active")
+                        if (step.status == "in_progress") {
+                            entryContainer.classList.add("inProgressEntry")
+                        } else {
+                            entryContainer.classList.add("failedEntry")
+                        }
                     }
-                }
-            });
-            this.#tab_buttons.push({
-                button:tab_button,
-                run_id:wf.run_id
-            })
-            tab_header.append(tab_button)
-        }
-        let toggle_button = document.createElement("div");
-        toggle_button.innerHTML =  `
-        <div class="reallyYesOrNo">
-            <div class="noooo">Minimal</div>
-            <div class="yesss">Debug</div>
-        </div>
-        <div class="yeahhh">Minimal</div>
-        <div class="yeahhh">Debug</div>
-        `;
-        toggle_button.classList.add("buttonHere");
-        toggle_button.querySelector('.reallyYesOrNo').addEventListener('click', (e) => {
-            e.preventDefault();
-            toggle_button.querySelector('.reallyYesOrNo').classList.toggle('itsOkay')
-            this.#in_depth = !this.#in_depth
-            this.switch_content(content, content2, this.#view_workflow, column2)
-        });
-
-        tab_header.append(toggle_button)
-    }
-
-    switch_content(content, content2, wf, column2) {
-        this.#view_workflow = wf
-        content.innerHTML = "";
-        content2.innerHTML = "";
-        let wf_head_sha = document.createElement("p")
-        wf_head_sha.innerHTML = `Commit Hash: ${wf.head_sha} <br>Workflow Status: ${wf.status} <br>Conclusion: ${wf.conclusion}`
-        content.append(wf_head_sha)
-        let stepBoxesFailed = []
-        let stepBoxesSuccess = []
-        for (let step of wf.steps) {
-            if (this.#leave_out_steps_set.has(step.name)) {
-                continue
-            }
-            let step_container = document.createElement("p")
-            step_container.classList.add("stepContainer")
-            let step_name = document.createElement("div")
-            step_name.classList.add("containerHeader")
-            step_name.textContent = step.name; 
-            let step_status = document.createElement("p")
-            step_status.textContent = "Status: " + step.status
-            let step_conclusion = document.createElement("p")
-            step_conclusion.textContent = "Conclusion: " + step.conclusion
-            step_container.append(step_name, step_status, step_conclusion)
-            if (step.conclusion == "success") {
-                step_container.classList.add("successContainer")
-                stepBoxesSuccess.push([step_container, step]);
-            }
-            else {
-                if (step_container.status == "in_progress") {
-                    step_container.classList.add("inProgressContainer")
-                    stepBoxesFailed.push([step_container, step]);
+                    entryContainer.addEventListener("click", (e) => {
+                        console.log(step)
+                        this.showStep(step, render_div)
+                    })
+                    row.append(entry)
                 } else {
-                    step_container.classList.add("failedContainer")
-                    stepBoxesFailed.push([step_container, step]);
+                    let entry = document.createElement("th")
+                    entry.textContent = "NA"
+                    row.append(entry)
                 }
             }
-            step_container.addEventListener('click', ()=>{
-                for (let cont of this.#steps_buttons) {
-                    cont[0].classList.remove("active")
-                }
-                step_container.classList.add("active")
-            
-                this.select_step(step, column2)
-            })
+            row.classList.add("CommitEntry")
+            table.append(row)
         }
-        this.#steps_buttons = [...stepBoxesFailed, ...stepBoxesSuccess]
-        let i = 0
-        for (let cont of this.#steps_buttons) {
-            content2.append(cont[0])
-            const val = i
-            cont[0].addEventListener('click', () => {
-                this.#workflow_live_step[wf.run_id] = val;
-            })
-            i++;
-        }
-        this.#steps_buttons[this.#workflow_live_step[wf.run_id]][0].classList.add("active")
-        this.select_step(this.#steps_buttons[this.#workflow_live_step[wf.run_id]][1], column2);
     }
 
-    select_step(step, column2) {
-        column2.innerHTML = '';
-        let step_name = document.createElement("div")
-        step_name.classList.add("containerHeader")
-        step_name.textContent = step.name; 
-        let step_status = document.createElement("p")
-        step_status.textContent = "Status: " + step.status
-        let step_conclusion = document.createElement("p")
-        step_conclusion.textContent = "Conclusion: " + step.conclusion
-        let step_be = document.createElement("p")
-        step_be.textContent = "Time: " + this.convert_date(step.startTime) + "   ---   " + this.convert_date(step.endTime)
-        let step_log = document.createElement("textarea")
-        if (this.#in_depth) {
-            step_log.textContent = step.log.replace(/^\n/, '')
-        } else {
-            step_log.textContent = step.log.replace(/^\n/, '').replace(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)\s+/gm, '')
+    showStep(step, render_div) {
+        let commit_row = render_div.querySelector(".popup")
+        while (commit_row != null) {
+            render_div.removeChild(commit_row)
+            commit_row = render_div.querySelector(".popup")
         }
-        step_log.classList.add("stepLog")
-        column2.append(step_name, step_status, step_conclusion, step_be, step_log)
+        let popup_div = document.createElement("div");
+        popup_div.classList.add("popup")
+        let stepName = document.createElement("h");
+        stepName.textContent = step.name;
+        let stepTable = document.createElement("table");
+        stepTable.classList.add("stepTable")
+        let r1 = document.createElement("tr")
+        let e11 = document.createElement("th")
+        e11.textContent = "Status: "
+        let e12 = document.createElement("th");
+        e12.textContent = step.status
+        if (step.conclusion == "success") {
+            e12.classList.add("successStep")
+        }
+        else {
+            if (step.status == "in_progress") {
+                e12.classList.add("inProgressStep")
+            } else {
+                e12.classList.add("failedStep")
+            }
+        }
+        r1.append(e11, e12)
+        let r2 = document.createElement("tr")
+        let e21 = document.createElement("th")
+        e21.textContent = "Run Time: "
+        let e22 = document.createElement("th");
+        e22.textContent = this.convert_date(step.startTime) + " - " + this.convert_date(step.endTime)
+        r2.append(e21, e22)
+        stepTable.append(r1, r2)
+        //Add the console
+        let logsArea = document.createElement("textarea")
+        logsArea.textContent = step.log;
+        let exit_button = document.createElement("button")
+        exit_button.type="button"
+        exit_button.textContent = "X"
+        exit_button.classList.add("exitButton")
+        exit_button.onclick = () => {
+            popup_div.classList.add("hide")
+        }
+        
+        popup_div.append(stepName, stepTable, logsArea, exit_button)
+
+        
+        render_div.append(popup_div)
+
     }
+
+
+    
 
     convert_date(d) {
         const date = new Date(d);

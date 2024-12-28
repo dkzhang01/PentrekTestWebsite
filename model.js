@@ -17,7 +17,7 @@ export class webModel extends EventTarget {
         try {
             const wfs = await this.checkWorkflows();
             for (let i = 0; i < wfs.length; i++) {
-                const new_workflow = await workflow.createInstance(wfs[i].id, wfs[i].status, this.#token)
+                const new_workflow = await workflow.createInstance(wfs[i].id, wfs[i].status, wfs[i].commitID, wfs[i].displayTitle, this.#token)
                 this.workflows.push(new_workflow)
             }
             if (wfs.length == 0) {
@@ -26,43 +26,61 @@ export class webModel extends EventTarget {
         } catch (error) {
             alert("Error Likely Wrong Username Password");
         }
-        document.dispatchEvent(new Event("tabUpdate"))
+        document.dispatchEvent(new Event("update"))
     }
 
+    async update() {
+        let newWorkflows = await this.checkWorkflows();
+        const existingWorkflows = this.workflows.map(workflow => workflow.run_id)
 
-    async updateWorkflow(wf) {
-        if (wf.status != "complete") {
-            wf.update();
-        }
-    }
-
-    async addNewWorkflows() {
-        let newWorkflows = await this.checkWorkflows()
-        let i = 0
-        while (i < newWorkflows.length) {
-            let found_index = -1
-            let j = 0
-            while (j < this.workflows.length) {
-                if (newWorkflows[i].id == this.workflows[j].run_id) {
-                    found_index = j
-                    break
+        for (let newWFD of newWorkflows) {
+            if (existingWorkflows.indexOf(newWFD) > -1) {
+                if ((this.workflows[existingWorkflows.indexOf(newWFD)].status != "completed")) {
+                    this.workflows[existingWorkflows.indexOf(newWFD)].update()
                 }
-                j += 1
-            }
-            if (found_index >= 0) {
-                newWorkflows[i] = this.workflows[found_index];
             } else {
-                newWorkflows[i] = await workflow.createInstance(newWorkflows[i].id, newWorkflows[i].status)
+                this.workflows.push(await workflow.createInstance(newWFD.id, newWFD.status, newWFD.commitID, newWFD.displayTitle, this.#token))
             }
-            i += 1
         }
-        document.dispatchEvent(new Event("tabUpdate"))
+
+        this.workflows((a, b) => {
+            let datea = new Date(a.startTime)
+            let dateb = new Date(b.startTime)
+            if (datea < dateb) {
+                return -1
+            } else {
+                return 1
+            }
+        })
+
+        // let i = 0
+        // while (i < newWorkflows.length) {
+        //     let found_index = -1
+        //     let j = 0
+        //     while (j < this.workflows.length) {
+        //         if (newWorkflows[i].id == this.workflows[j].run_id) {
+        //             found_index = j
+        //             break
+        //         }
+        //         j += 1
+        //     }
+        //     if (found_index >= 0) {
+        //         newWorkflows[i] = this.workflows[found_index];
+        //     } else {
+        //         newWorkflows[i] = await workflow.createInstance(newWorkflows[i].id, newWorkflows[i].status)
+        //     }
+        //     i += 1
+        // }
+        document.dispatchEvent(new Event("update"))
     }
 
-    async checkWorkflows() {
+    async checkWorkflows(count) {
         let response;
+        if (count == null) {
+            count = 20
+        }
         try {
-            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=20', {
+            response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=' + count, {
                 method: 'GET',
                 headers: {
                 'Authorization': `token ${this.#token}`,
@@ -79,7 +97,7 @@ export class webModel extends EventTarget {
             // Filter workflows with the name "Testing"
             const filteredWorkflows = data.workflow_runs.filter(workflow => 
                workflow.name === "Testing"
-            ).slice(0,5)
+            )
             // const filteredWorkflows = [];
             // let foundNonSuccess = false;
             // for (const workflow of data.workflow_runs) {
@@ -95,7 +113,9 @@ export class webModel extends EventTarget {
             // Log the run IDs of the workflows that match the criteria
             const runIds = filteredWorkflows.map(workflow => ({
                 id:workflow.id,
-                status:workflow.status
+                status:workflow.status,
+                commitID:workflow.head_sha,
+                displayTitle:workflow.display_title
             }));
             return runIds;  // Return the array of run IDs
 
@@ -119,6 +139,7 @@ class workflow extends EventTarget {
     run_id
     steps
     head_sha
+    display_title
     #token
     start_time
 
@@ -128,13 +149,14 @@ class workflow extends EventTarget {
         this.#token = token
     }
 
-    static async createInstance(run_id, status, token) {
+    static async createInstance(run_id, status, commitID, displayTitle, token) {
         this.status = status
         const jobInstance = new workflow(run_id, token);
         const data = await jobInstance.getJobIds(run_id)
         jobInstance.status = data.jobs[0].status
         jobInstance.conclusion = data.jobs[0].conclusion
-        jobInstance.head_sha = data.jobs[0].head_sha
+        jobInstance.head_sha = commitID
+        jobInstance.display_title = displayTitle
         jobInstance.start_time = new Date(data.jobs[0].started_at)
         jobInstance.steps = data.jobs[0].steps.map(step => ({
             name: step.name,
@@ -152,30 +174,16 @@ class workflow extends EventTarget {
     async update() {
         //throws event if something changed
         const data = await this.getJobIds(run_id)
-        const newSteps = data.jobs[0].map(step => ({
+        this.steps = data.jobs[0].map(step => ({
             name: step.name,
             status: step.status,
             conclusion: step.conclusion,
             startTime: step.started_at,
             endTime: step.completed_at,
-            log: None
+            log: ""
         }));
-        
-        for (let i = 0; i < newSteps.length; i++) {
-            if (newSteps.status != "completed") {
-                this.steps = newSteps;
-                let log = await this.getJobLog(data.jobs[0].id);
-                this.updateStepslog(log);
-                document.dispatchEvent(new Event("workflowUpdate" + this.run_id))
-                return;
-            }
-        }
-
-        this.status = "completed"
-        this.steps = newSteps;
-        let log = await this.getJobLog(data.jobs[0].id);
-        this.updateStepslog(log);
-        document.dispatchEvent(new Event("workflowUpdate" + this.run_id))
+        const log = await jobInstance.getJobLog(data.jobs[0].id);
+        jobInstance.updateStepsLog(log);
         return;
 
     }
