@@ -10,7 +10,7 @@ export class webController {
 
     getViewWorkflows(count) {
         console.log(this.#model.workflows[0])
-        return this.#model.workflows.splice(0, count)
+        return this.#model.workflows.slice(0, count)
     }
 
     update() {

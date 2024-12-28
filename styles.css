@@ -115,6 +115,11 @@ tr:nth-child(1), tr:nth-child(2) {
   height:400px;
   width: 400px;
   transform: translate(-50%, -50%);
+  padding: 20px;
+}
+
+.popup * {
+  margin:10px;
 }
 
 .successStep {
@@ -137,4 +142,9 @@ tr:nth-child(1), tr:nth-child(2) {
 
 .hide {
   visibility: hidden;
+}
+
+textarea {
+  width: 300px;
+  height: 200px;
 }

@@ -2,6 +2,7 @@ export class webView {
     #controller
     #columns
     #stepNames
+    #num_commits
     constructor(controller) {
         this.#controller = controller
         this.#columns = {
@@ -9,6 +10,7 @@ export class webView {
             "Basic Tests": ["Myapp", "tools:tests", "ray:unittests", "wrapper_smart_ptrs :unittests", "tools:bench", "tools:cskiaapp", "gm:gmapp"]
         }
         this.#stepNames = []
+        this.#num_commits = 5
     }
 
     render_login(render_div) {
@@ -60,7 +62,20 @@ export class webView {
         render_div.append(table);
         let r1 = document.createElement("tr")
         let d11 = document.createElement("th")
-        // To add commit number input
+        let num_label = document.createElement("label");
+        num_label.textContent = "Commits: "
+        let num_input = document.createElement("input");
+        num_input.type="number"
+        num_input.min = 1
+        num_input.value = 5 // default number of commits to show
+        num_input.max = 20
+        let reload_button = document.createElement("button");
+        reload_button.textContent = "Reload"
+        reload_button.onclick = () => {
+            console.log("reloading")
+            this.fill_table(table, num_input.value, render_div)
+        }
+        d11.append(num_label, num_input, reload_button)
         let d12 = document.createElement("th")
         r1.append(d11, d12)
         let r2 = document.createElement("tr");
@@ -97,7 +112,7 @@ export class webView {
         table.append(r1, r2)
         document.addEventListener("update", () => {
             console.log("updating")
-            this.fill_table(table, 5, render_div)
+            this.fill_table(table, num_input.value, render_div)
         })
     }
 
