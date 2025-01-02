@@ -17,7 +17,7 @@ export class webModel extends EventTarget {
         try {
             const wfs = await this.checkWorkflows();
             for (let i = 0; i < wfs.length; i++) {
-                const new_workflow = await workflow.createInstance(wfs[i].id, wfs[i].status, wfs[i].commitID, wfs[i].displayTitle, this.#token)
+                const new_workflow = await workflow.createInstance(wfs[i].id, wfs[i].status, wfs[i].commitID, wfs[i].displayTitle, wfs[i].committer, wfs[i].commitDate, this.#token)
                 this.workflows.push(new_workflow)
             }
             if (wfs.length == 0) {
@@ -39,7 +39,7 @@ export class webModel extends EventTarget {
                     this.workflows[existingWorkflows.indexOf(newWFD)].update()
                 }
             } else {
-                this.workflows.push(await workflow.createInstance(newWFD.id, newWFD.status, newWFD.commitID, newWFD.displayTitle, this.#token))
+                this.workflows.push(await workflow.createInstance(newWFD.id, newWFD.status, newWFD.commitID, newWFD.displayTitle, newWFD.committer, newWFD.commitDate, this.#token))
             }
         }
 
@@ -53,31 +53,13 @@ export class webModel extends EventTarget {
             }
         })
 
-        // let i = 0
-        // while (i < newWorkflows.length) {
-        //     let found_index = -1
-        //     let j = 0
-        //     while (j < this.workflows.length) {
-        //         if (newWorkflows[i].id == this.workflows[j].run_id) {
-        //             found_index = j
-        //             break
-        //         }
-        //         j += 1
-        //     }
-        //     if (found_index >= 0) {
-        //         newWorkflows[i] = this.workflows[found_index];
-        //     } else {
-        //         newWorkflows[i] = await workflow.createInstance(newWorkflows[i].id, newWorkflows[i].status)
-        //     }
-        //     i += 1
-        // }
         document.dispatchEvent(new Event("update"))
     }
 
     async checkWorkflows(count) {
         let response;
         if (count == null) {
-            count = 20
+            count = 30
         }
         try {
             response = await fetch('https://api.github.com/repos/mikerreed/pentrek/actions/runs?per_page=' + count, {
@@ -98,24 +80,14 @@ export class webModel extends EventTarget {
             const filteredWorkflows = data.workflow_runs.filter(workflow => 
                workflow.name === "Testing"
             )
-            // const filteredWorkflows = [];
-            // let foundNonSuccess = false;
-            // for (const workflow of data.workflow_runs) {
-            //     if (workflow.name === "Testing") {
-            //         if (workflow.status != "completed") {
-            //             filteredWorkflows.push(workflow); // Add successful workflows
-            //         } else if (!foundNonSuccess) {
-            //             filteredWorkflows.push(workflow); // Add the first non-success workflow
-            //             foundNonSuccess = true; // Ensure we only add the first non-success
-            //         }
-            //     }
-            // }
-            // Log the run IDs of the workflows that match the criteria
+            
             const runIds = filteredWorkflows.map(workflow => ({
                 id:workflow.id,
                 status:workflow.status,
-                commitID:workflow.head_sha,
-                displayTitle:workflow.display_title
+                committer: workflow.head_commit.author,
+                commitDate: workflow.head_commit.timestamp,
+                commitID:workflow.head_commit.id,
+                displayTitle:workflow.head_commit.message
             }));
             return runIds;  // Return the array of run IDs
 
@@ -140,6 +112,8 @@ class workflow extends EventTarget {
     steps
     head_sha
     display_title
+    committer
+    commitDate
     #token
     start_time
 
@@ -149,7 +123,7 @@ class workflow extends EventTarget {
         this.#token = token
     }
 
-    static async createInstance(run_id, status, commitID, displayTitle, token) {
+    static async createInstance(run_id, status, commitID, displayTitle, committer, commitDate, token) {
         this.status = status
         const jobInstance = new workflow(run_id, token);
         const data = await jobInstance.getJobIds(run_id)
@@ -157,6 +131,8 @@ class workflow extends EventTarget {
         jobInstance.conclusion = data.jobs[0].conclusion
         jobInstance.head_sha = commitID
         jobInstance.display_title = displayTitle
+        jobInstance.committer = committer
+        jobInstance.commitDate = commitDate
         jobInstance.start_time = new Date(data.jobs[0].started_at)
         jobInstance.steps = data.jobs[0].steps.map(step => ({
             name: step.name,

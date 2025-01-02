@@ -6,6 +6,7 @@ export class webController {
 
     login(key) {
         this.#model.initialize(key)
+        //setInterval(this.update, 300000)
     }
 
     getViewWorkflows(count) {
@@ -14,6 +15,7 @@ export class webController {
     }
 
     update() {
+        console.log("Updating")
         this.#model.update()
     }
 

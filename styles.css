@@ -79,6 +79,16 @@ html, body {
   border-color:rgb(40,42,47);
 }
 
+.commitDiv {
+  margin: auto;
+  border-style:solid;
+  width: 50px;
+  height:15px;
+  border-radius:100px;
+  border-width:1px;
+  border-color:rgb(40,42,47);
+}
+
 
 
 .mainTable {
@@ -92,13 +102,14 @@ html, body {
 th {
   padding:2px;
   height: 20px;
+  font-weight: normal;
 }
 
 tr {
   background-color  : rgb(17,19,24);
 }
 tr:nth-child(2n + 1) {
-  background-color: gray;
+  background-color: rgb(29,32,36);
 }
 tr:nth-child(1), tr:nth-child(2) {
   background: rgb(17,19,24);
@@ -128,6 +139,10 @@ tr:nth-child(1), tr:nth-child(2) {
 
 .failedStep {
   background-color: rgb(217,95,2);
+}
+
+.inProgressStep {
+  background-color: rgb(117,112,179);
 }
 
 .stepTable {
