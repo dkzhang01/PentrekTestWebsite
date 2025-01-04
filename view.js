@@ -53,7 +53,7 @@ export class webView {
         render_div.innerHTML = "";
         // Render header bar
         let header_bar = document.createElement("div");
-        header_bar.textContent = "Some Status Message"
+        header_bar.textContent = "Last Update: "
         render_div.append(header_bar);
 
         //render main table
@@ -121,6 +121,7 @@ export class webView {
         document.addEventListener("update", () => {
             console.log("updating")
             this.fill_table(table, this.#num_commits, render_div)
+            header_bar.textContent = "Last Update: " + this.convert_date(new Date());
         })
     }
 
@@ -238,7 +239,8 @@ export class webView {
         stepTable.append(r1, r2)
         //Add the console
         let logsArea = document.createElement("textarea")
-        logsArea.textContent = step.log;
+        //also remove time stamp
+        logsArea.textContent = step.log.replace(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)\s?/g, "");
         let exit_button = document.createElement("button")
         exit_button.type="button"
         exit_button.textContent = "X"

@@ -6,7 +6,7 @@ html, body {
     overflow: auto; 
     background-color: rgb(30,32,36);
     color:white;
-    font-family: "Times New Roman"
+    font-family: "Arial"
   }
 
 
@@ -37,7 +37,6 @@ html, body {
   border-color:rgb(40,42,47);
   padding:8px;
   font-size: 15px;
-  font-family: "Times New Roman"
 }
 
 .status {

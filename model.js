@@ -32,18 +32,19 @@ export class webModel extends EventTarget {
     async update() {
         let newWorkflows = await this.checkWorkflows();
         const existingWorkflows = this.workflows.map(workflow => workflow.run_id)
-
+        console.log(newWorkflows)
+        console.log(existingWorkflows)
         for (let newWFD of newWorkflows) {
-            if (existingWorkflows.indexOf(newWFD) > -1) {
-                if ((this.workflows[existingWorkflows.indexOf(newWFD)].status != "completed")) {
-                    this.workflows[existingWorkflows.indexOf(newWFD)].update()
+            if (existingWorkflows.indexOf(newWFD.id) > -1) {
+                if ((this.workflows[existingWorkflows.indexOf(newWFD.id)].status != "completed")) {
+                    this.workflows[existingWorkflows.indexOf(newWFD.id)].update()
                 }
             } else {
                 this.workflows.push(await workflow.createInstance(newWFD.id, newWFD.status, newWFD.commitID, newWFD.displayTitle, newWFD.committer, newWFD.commitDate, this.#token))
             }
         }
 
-        this.workflows((a, b) => {
+        this.workflows.sort((a, b) => {
             let datea = new Date(a.startTime)
             let dateb = new Date(b.startTime)
             if (datea < dateb) {
