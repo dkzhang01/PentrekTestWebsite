@@ -16,6 +16,7 @@ export class webModel extends EventTarget {
    
         try {
             const wfs = await this.checkWorkflows();
+            console.log(wfs)
             for (let i = 0; i < wfs.length; i++) {
                 const new_workflow = await workflow.createInstance(wfs[i].id, wfs[i].status, wfs[i].commitID, wfs[i].displayTitle, wfs[i].committer, wfs[i].commitDate, this.#token)
                 this.workflows.push(new_workflow)
@@ -24,6 +25,7 @@ export class webModel extends EventTarget {
                 alert("No workflows Found")
             }
         } catch (error) {
+            console.log(error)
             alert("Error Likely Wrong Username Password");
         }
         document.dispatchEvent(new Event("update"))
@@ -135,23 +137,25 @@ class workflow extends EventTarget {
         jobInstance.committer = committer
         jobInstance.commitDate = commitDate
         jobInstance.start_time = new Date(data.jobs[0].started_at)
-        jobInstance.steps = data.jobs[0].steps.map(step => ({
-            name: step.name,
-            status: step.status,
-            conclusion: step.conclusion,
-            startTime: step.started_at,
-            endTime: step.completed_at,
-            log: ""
-        }));
-        const log = await jobInstance.getJobLog(data.jobs[0].id);
-        jobInstance.updateStepsLog(log);
+        if (status != "queued") {
+            jobInstance.steps = data.jobs[0].steps.map(step => ({
+                name: step.name,
+                status: step.status,
+                conclusion: step.conclusion,
+                startTime: step.started_at,
+                endTime: step.completed_at,
+                log: ""
+            }));
+
+            const log = await jobInstance.getJobLog(data.jobs[0].id);
+            jobInstance.updateStepsLog(log);
+        }
         return jobInstance
     }
 
     async update() {
-        //throws event if something changed
-        const data = await this.getJobIds(run_id)
-        this.steps = data.jobs[0].map(step => ({
+        const data = await this.getJobIds(this.run_id)
+        this.steps = data.jobs[0].steps.map(step => ({
             name: step.name,
             status: step.status,
             conclusion: step.conclusion,
@@ -159,8 +163,8 @@ class workflow extends EventTarget {
             endTime: step.completed_at,
             log: ""
         }));
-        const log = await jobInstance.getJobLog(data.jobs[0].id);
-        jobInstance.updateStepsLog(log);
+        const log = await this.getJobLog(data.jobs[0].id);
+        this.updateStepsLog(log);
         return;
 
     }

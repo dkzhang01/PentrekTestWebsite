@@ -159,6 +159,22 @@ export class webView {
             let commit_date = document.createElement("th");
             commit_date.textContent = this.convert_date(wf.commitDate)
             row.append(commit_id, committer_d, commit_date)
+            if (wf.steps == undefined) {
+                for (let stepName of this.#stepNames) {
+                    let entry = document.createElement("th")
+                    let entryContainer = document.createElement("div")
+                    entryContainer.title = stepName + "@Queued"
+                    entryContainer.classList.add("status")
+                    entry.append(entryContainer)
+
+                    entryContainer.classList.add("inProgressEntry")
+                    row.append(entry)
+                }
+                commit_id_div.style.background = "rgb(117,112,179)"
+                row.classList.add("CommitEntry")
+                table.append(row)
+                break;
+            }
             const wfStepnames = wf.steps.map((s) => s.name)
             let success_counts = 0
             let inprogress_counts = 0
@@ -176,7 +192,7 @@ export class webView {
                         entryContainer.classList.add("successEntry")
                     }
                     else {
-                        if (step.status == "in_progress") {
+                        if (step.status == "in_progress" || step.status == "pending") {
                             inprogress_counts++;
                             entryContainer.classList.add("inProgressEntry")
                         } else {
@@ -196,7 +212,7 @@ export class webView {
                 }
             }
             let total_steps = success_counts + inprogress_counts + failed_counts
-            commit_id_div.style.background = `linear-gradient(to right, rgb(102,166,30) ${(success_counts / total_steps) * 100}%, rgb(117,112,179) ${(inprogress_counts / total_steps) * 100}%, rgb(217,95,2) ${(failed_counts / total_steps) * 100}%)`
+            commit_id_div.style.background = this.generateGradient((success_counts / total_steps) * 100, (inprogress_counts / total_steps) * 100, (failed_counts / total_steps) * 100)
             row.classList.add("CommitEntry")
             table.append(row)
         }
@@ -218,14 +234,16 @@ export class webView {
         let e11 = document.createElement("th")
         e11.textContent = "Status: "
         let e12 = document.createElement("th");
-        e12.textContent = step.conclusion
         if (step.conclusion == "success") {
+            e12.textContent = step.conclusion
             e12.classList.add("successStep")
         }
         else {
-            if (step.status == "in_progress") {
+            if (step.status == "in_progress" || step.status == "pending") {
+                e12.textContent = "In Progress"
                 e12.classList.add("inProgressStep")
             } else {
+                e12.textContent = "Failed"
                 e12.classList.add("failedStep")
             }
         }
@@ -257,6 +275,30 @@ export class webView {
     }
 
 
+    generateGradient(greenPercent, bluePercent, redPercent) {
+        // Start constructing the gradient string
+        let gradient = "linear-gradient(to right";
+    
+        // Add red if present
+        if (greenPercent > 0) {
+            gradient += `, rgb(102,166,30) ${greenPercent}%`;
+        }
+    
+        // Add green if present
+        if (bluePercent > 0) {
+            const startGreen = greenPercent;
+            gradient += `, rgb(117,112,179) ${startGreen}%, rgb(117,112,179) ${startGreen + bluePercent}%`;
+        }
+    
+        // Add blue if present
+        if (redPercent > 0) {
+            const startBlue = greenPercent + bluePercent;
+            gradient += `, rgb(217,95,2) ${startBlue}%, rgb(217,95,2) 100%`;
+        }
+    
+        gradient += ")";
+        return gradient;
+    }
     
 
     convert_date(d) {
